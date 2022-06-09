@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: kea-runstate
+  labels:
+    {{- include "kea4.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 64Mi

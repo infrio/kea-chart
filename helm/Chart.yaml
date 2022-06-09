@@ -1,0 +1,10 @@
+apiVersion: v2
+name: kea4
+description: An unofficial Helm chart for kea dhcp4 service
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+- name: mariadb-galera
+  version: "7.3.2"
+  repository: "https://charts.bitnami.com/bitnami"

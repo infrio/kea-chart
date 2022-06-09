@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: "{{ .Release.Name }}"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: config-databases
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        command: ["/bin/bash", "-c", "/etc/kea-db-init/kea-admin-init.sh"]
+        volumeMounts:
+        - name: db-config
+          mountPath: /etc/kea-db-config
+        - name: db-init
+          mountPath: /etc/kea-db-init
+      volumes:
+      - name: db-config
+        secret:
+          secretName: {{ .Release.Name }}-mariadb-galera
+          optional: false
+      - name: db-init
+        secret:
+          secretName: {{ .Release.Name }}-db-init
+          optional: false
+          items:
+          - key: prep.sql
+            path: prep.sql
+            mode: 420
+          - key: kea-admin-init.sh
+            path: kea-admin-init.sh
+            mode: 0720
