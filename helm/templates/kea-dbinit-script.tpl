@@ -21,12 +21,11 @@ wait_for_mysql(){
     echo "Galera cluster is not ready - sleeping"
     sleep 5
   done
-  echo "DB is ready"
 }
 
 
 wait_for_mysql $DB_HOST
-echo "DB is ready"
+echo "Galera cluster is ready"
 
 mysql -u root -p$PASSWORD -h $DB_HOST < /etc/kea-db-init/prep.sql
 echo "databases created"

@@ -29,41 +29,11 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: ctrl-agent
-          command:
-          - /usr/sbin/kea-ctrl-agent
-          - "-c"
-          - /etc/kea/ctrl-agent.conf
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: 8443
-              protocol: TCP
-          livenessProbe:
-            tcpSocket:
-              port: 8443
-            initialDelaySeconds: 15
-            periodSeconds: 30
-          readinessProbe:
-            tcpSocket:
-              port: 8443
-            initialDelaySeconds: 15
-            periodSeconds: 30
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-          - name: kea-config
-            mountPath: /etc/kea
-          - name: kea-runstate
-            mountPath: /var/kea
         - name: dhcp4
           command:
-          - /usr/sbin/kea-dhcp4
+          - /bin/bash
           - "-c"
-          - /etc/kea/dhcp4.conf
+          - /usr/local/bin/start-dhcp4.sh
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -94,6 +64,36 @@ spec:
               - "-"
             initialDelaySeconds: 30
             periodSeconds: 60
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: kea-config
+            mountPath: /etc/kea
+          - name: kea-runstate
+            mountPath: /var/kea
+        - name: ctrl-agent
+          command:
+          - /bin/bash
+          - "-c"
+          - /usr/local/bin/start-ctrl-agent.sh
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 8443
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8443
+            initialDelaySeconds: 15
+            periodSeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

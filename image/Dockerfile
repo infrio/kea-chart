@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bullseye-slim
 
 RUN apt-get update && \
     apt-get -y install gnupg curl && \
@@ -7,3 +7,5 @@ RUN apt-get update && \
     apt-get update && \
     apt-get -y install isc-kea-admin isc-kea-ctrl-agent isc-kea-dhcp4-server mariadb-client netcat
 
+ADD start-dhcp4.sh /usr/local/bin/start-dhcp4.sh
+ADD start-ctrl-agent.sh /usr/local/bin/start-ctrl-agent.sh

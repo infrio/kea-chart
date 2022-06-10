@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: jxiaobin/kea4
   pullPolicy: IfNotPresent
-  tag: "0.1"
+  tag: "0.2"
 
 imagePullSecrets: []
 nameOverride: ""
