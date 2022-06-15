@@ -16,5 +16,4 @@ Example:
 
 - generate specs and apply
 
-`helm --release-name ironous -n seed --set mariadb-galera.rootUser.password=secretpassword --set kea-agent.password=secretpassword template helm | kubectl apply -f -`
-`helm --release-name ironous -n seed --set postgresql-ha.postgresql.password=secretpassword --set kea-agent.password=jxiaobin template helm | kubectl apply -f -`
+`helm --release-name ironous -n seed --set postgresql-ha.postgresql.password=secretpassword --set kea-agent.password=secretpassword template helm | kubectl apply -f -`
