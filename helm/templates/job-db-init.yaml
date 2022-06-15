@@ -31,19 +31,22 @@ spec:
           mountPath: /etc/kea-db-config
         - name: db-init
           mountPath: /etc/kea-db-init
+        - name: stork-certs
+          mountPath: /etc/stork/certs
       volumes:
       - name: db-config
         secret:
-          secretName: {{ .Release.Name }}-mariadb-galera
+          secretName: {{ include "postgresql-ha.postgresql" (index .Subcharts "postgresql-ha") }}
           optional: false
       - name: db-init
         secret:
           secretName: {{ .Release.Name }}-db-init
           optional: false
           items:
-          - key: prep.sql
-            path: prep.sql
-            mode: 420
           - key: kea-admin-init.sh
             path: kea-admin-init.sh
             mode: 0720
+      - name: stork-certs
+        secret:
+          secretName: stork-certs
+          optional: false

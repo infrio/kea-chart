@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: jxiaobin/kea4
   pullPolicy: IfNotPresent
-  tag: "0.2"
+  tag: "0.1"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -39,6 +39,8 @@ service:
   type: ClusterIP
   dhcpPort: 67
   agentPort: 8443
+  storkServerPort: 9090
+  storkAgentPort: 8080
 
 ingress:
   enabled: false
@@ -68,20 +70,25 @@ configDB:
   user: kea
   password: dhcpass
   name: dhcp
-  port: 3306
+  port: 5432
 
 leaseDB:
   user: kea
   password: dhcpass
   name: dhcp
-  port: 3306
+  port: 5432
 
 hostDB:
   user: kea
   password: dhcpass
   name: dhcp
-  port: 3306
+  port: 5432
 
+storkDB:
+  user: kea
+  password: dhcpass
+  name: stork
+  port: 5432
 
 kea:
   unixSocket: /var/kea/dhcp4-ctrl-socket
@@ -90,9 +97,6 @@ kea-agent:
   user: agent
   password: maunakea
 
-mariadb-galera:
-  image:
-    tag: "10.7.4"
-    debug: true
-  replicaCount: 2
-  configurationConfigMap: mariadb-config
+postgresql-ha:
+  pgpool:
+    initdbScriptsSecret: pgpool-users

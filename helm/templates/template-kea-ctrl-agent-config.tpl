@@ -1,11 +1,14 @@
+{{/*
+Generate control agent config file
+*/}}
 {{- define "kea-ctrl-agent-config" }}
 {
     "Control-agent": {
       "http-host": "0.0.0.0",
       "http-port": 8443,
-      "trust-anchor": "/etc/kea/ca.crt",
-      "cert-file": "/etc/kea/agent.crt",
-      "key-file": "/etc/kea/agent.key",
+      "trust-anchor": "/etc/kea/certs/ca.crt",
+      "cert-file": "/etc/kea/certs/ctrl-agent.crt",
+      "key-file": "/etc/kea/certs/ctrl-agent.key",
       "cert-required": false,
       "authentication": {
         "type": "basic",

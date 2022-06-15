@@ -14,10 +14,10 @@
     "config-control": {
       "config-databases": [
         {
-          "type": "mysql",
+          "type": "postgresql",
           "name": {{ .Values.configDB.name | quote }},
           "user": {{ .Values.configDB.user | quote }},
-          "host": "{{ template "common.names.fullname" (index .Subcharts "mariadb-galera") }}.{{ .Release.Namespace}}.svc.cluster.local",
+          "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
           "port": {{ .Values.configDB.port }},
           "password": {{ .Values.configDB.password | quote }}
         }
@@ -25,18 +25,18 @@
       "config-fetch-wait-time": 20
     },
     "lease-database": {
-      "type": "mysql",
+      "type": "postgresql",
       "name": {{ .Values.leaseDB.name | quote }},
       "user": {{ .Values.leaseDB.user | quote }},
-      "host": "{{ template "common.names.fullname" (index .Subcharts "mariadb-galera") }}.{{ .Release.Namespace}}.svc.cluster.local",
+      "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
       "password": {{ .Values.leaseDB.password | quote }},
       "lfc-interval": 3600
     },
     "hosts-database": {
-      "type": "mysql",
+      "type": "postgresql",
       "name": {{ .Values.hostDB.name | quote }},
       "user": {{ .Values.leaseDB.user | quote }},
-      "host": "{{ template "common.names.fullname" (index .Subcharts "mariadb-galera") }}.{{ .Release.Namespace}}.svc.cluster.local",
+      "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
       "password": {{ .Values.leaseDB.password | quote }}
     },
     "expired-leases-processing": {
@@ -52,7 +52,19 @@
     "valid-lifetime": 3600,
     "hooks-libraries": [
       {
-        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_mysql_cb.so"
+        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_flex_option.so",
+        "parameters": {
+          "options": [{
+            "code": 67,
+            "add": "ifelse(option[host-name].exists,concat(option[host-name].text,'.boot'),'')"
+          }]
+        }
+      },
+      {
+        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so"
+      },
+      {
+        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql_cb.so"
       },
       {
         "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so"

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: stork
+  labels:
+    {{- include "kea4.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.storkServerPort }}
+      protocol: TCP
+      name: stork
+  selector:
+    {{- include "stork.selectorLabels" . | nindent 4 }}
+

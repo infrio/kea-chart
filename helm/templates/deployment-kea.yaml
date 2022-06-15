@@ -21,6 +21,7 @@ spec:
       labels:
         {{- include "kea4.selectorLabels" . | nindent 8 }}
     spec:
+      shareProcessNamespace: true
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -81,17 +82,17 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: 8443
+            - name: ctrl-agent
+              containerPort: {{ .Values.service.agentPort }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
-              port: 8443
+              port: {{ .Values.service.agentPort }}
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             tcpSocket:
-              port: 8443
+              port: {{ .Values.service.agentPort }}
             initialDelaySeconds: 15
             periodSeconds: 30
           resources:
@@ -99,8 +100,40 @@ spec:
           volumeMounts:
           - name: kea-config
             mountPath: /etc/kea
+          - name: kea-certs
+            mountPath: /etc/kea/certs
           - name: kea-runstate
             mountPath: /var/kea
+        - name: stork-agent
+          command:
+          - bash
+          - "-c"
+          - /usr/local/bin/start-stork-agent.sh
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: stork-agent
+              containerPort: {{ .Values.service.storkAgentPort }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.storkAgentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.storkAgentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: kea-config
+            mountPath: /etc/kea
+          - name: stork-config
+            mountPath: /etc/stork
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -118,6 +151,20 @@ spec:
         secret:
           secretName: {{ .Release.Name }}-config
           optional: false
+      - name: kea-certs
+        secret:
+          secretName: {{ .Release.Name }}-certs
+          optional: false
       - name: kea-runstate
-        persistentVolumeClaim:
-          claimName: kea-runstate
+        emptyDir: {}
+      - name: stork-config
+        secret:
+          secretName: stork-config
+          optional: false
+      - name: stork-certs
+        secret:
+          secretName: stork-certs
+          optional: false
+      - name: stork-runtime-certs
+        emptyDir: {}
+

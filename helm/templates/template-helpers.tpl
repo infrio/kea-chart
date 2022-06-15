@@ -48,6 +48,7 @@ Selector labels
 {{- define "kea4.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "kea4.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: dhcp-core
 {{- end }}
 
 {{/*
