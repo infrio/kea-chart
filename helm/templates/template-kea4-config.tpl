@@ -52,6 +52,9 @@
     "valid-lifetime": 3600,
     "hooks-libraries": [
       {
+        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_bootp.so"
+      },
+      {
         "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_flex_option.so",
         "parameters": {
           "options": [{

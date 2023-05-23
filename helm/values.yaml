@@ -5,9 +5,9 @@
 replicaCount: 1
 
 image:
-  repository: jxiaobin/kea4
+  repository: jxiaobin/kea-dhcp
   pullPolicy: IfNotPresent
-  tag: "0.1"
+  tag: "v2.3.7"
 
 imagePullSecrets: []
 nameOverride: ""

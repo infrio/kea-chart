@@ -40,5 +40,13 @@ Generate control agent config file
         }
       ]
     }
-  }
-  {{- end }}
+}
+{{- end }}
+
+
+{{- define "kea-ctrl-agent-auth-token" }}
+{{- $login := index .Values "kea-agent" "user"  -}}
+{{- $password := index .Values "kea-agent" "password"  -}}
+{{- $plain := printf "%s:%s" $login $password -}}
+{{ $plain | b64enc }}
+{{- end -}}

@@ -55,6 +55,8 @@ spec:
           volumeMounts:
           - name: stork-config
             mountPath: /etc/stork
+          - name: kea-certs
+            mountPath: /etc/stork/certs
       volumes:
       - name: stork-config
         secret:
@@ -63,3 +65,7 @@ spec:
           items:
           - key: server.env
             path: server.env
+      - name: kea-certs
+        secret:
+          secretName: {{ .Release.Name }}-certs
+          optional: false

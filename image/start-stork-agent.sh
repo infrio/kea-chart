@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -o errexit
-set -a
 
 PYPROG=$(cat <<EOF
 import json
@@ -50,12 +49,16 @@ echo "kea-ctrl-agent is up"
 wait_for_psql
 echo "Stork database is ready"
 
-/usr/bin/stork-tool cert-export --db-user $STORK_DATABASE_USER_NAME --db-password $STORK_DATABASE_PASSWORD --db-host $STORK_DATABASE_HOST --db-name $STORK_DATABASE_NAME --object srvtkn  --file /var/lib/stork-agent/tokens/server-token.txt
-/usr/bin/stork-tool cert-export --db-user $STORK_DATABASE_USER_NAME --db-password $STORK_DATABASE_PASSWORD --db-host $STORK_DATABASE_HOST --db-name $STORK_DATABASE_NAME --object cacert  --file /var/lib/stork-agent/certs/ca.pem
-# cp /etc/stork/certs/agent.crt /var/lib/stork-agent/certs/cert.pem
-
 wait_for_stork_server
 echo "Stork server is ready"
 
-/usr/bin/stork-agent register --server-url $STORK_AGENT_SERVER_URL --agent-host $(hostname -i):8080 --server-token $(cat /var/lib/stork-agent/tokens/server-token.txt) &
-/usr/bin/stork-agent --server-url $STORK_AGENT_SERVER_URL --host $(hostname -i) --skip-tls-cert-verification
+mkdir -p /var/lib/stork-agent/tokens
+mkdir -p /var/lib/stork-agent/certs
+/usr/bin/stork-tool cert-export --db-user $STORK_DATABASE_USER_NAME --db-password $STORK_DATABASE_PASSWORD --db-host $STORK_DATABASE_HOST --db-name $STORK_DATABASE_NAME --object srvtkn  --file /var/lib/stork-agent/tokens/server-token.txt
+/usr/bin/stork-tool cert-export --db-user $STORK_DATABASE_USER_NAME --db-password $STORK_DATABASE_PASSWORD --db-host $STORK_DATABASE_HOST --db-name $STORK_DATABASE_NAME --object cacert  --file /var/lib/stork-agent/certs/ca.pem
+cp /etc/stork/certs/stork-agent.crt /var/lib/stork-agent/certs/cert.pem
+cp /etc/stork/certs/stork-agent.key /var/lib/stork-agent/certs/key.pem
+cp /etc/stork/certs/ca.crt /usr/local/share/ca-certificates/stork.crt
+update-ca-certificates
+
+/usr/bin/stork-agent --skip-tls-cert-verification true --server-url $STORK_AGENT_SERVER_URL --host $(hostname -i)

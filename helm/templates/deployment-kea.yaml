@@ -86,13 +86,37 @@ spec:
               containerPort: {{ .Values.service.agentPort }}
               protocol: TCP
           livenessProbe:
-            tcpSocket:
-              port: {{ .Values.service.agentPort }}
+            exec:
+              command:
+              - curl
+              - --fail
+              - -k
+              - -X
+              - POST
+              - -H
+              - "Content-Type: application/json"
+              - -H
+              - 'Authorization: Basic {{- include "kea-ctrl-agent-auth-token" . -}}'
+              - -d
+              - '{"command": "status-get"}'
+              - https://localhost:{{ .Values.service.agentPort }}
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
-            tcpSocket:
-              port: {{ .Values.service.agentPort }}
+            exec:
+              command:
+              - curl
+              - --fail
+              - -k
+              - -X
+              - POST
+              - -H
+              - "Content-Type: application/json"
+              - -H
+              - 'Authorization: Basic {{- include "kea-ctrl-agent-auth-token" . -}}'
+              - -d
+              - '{"command": "status-get"}'
+              - https://localhost:{{ .Values.service.agentPort }}
             initialDelaySeconds: 15
             periodSeconds: 30
           resources:
@@ -134,6 +158,17 @@ spec:
             mountPath: /etc/kea
           - name: stork-config
             mountPath: /etc/stork
+          - mountPath: /etc/stork/certs
+            name: kea-certs
+          - mountPath: /var/lib/stork-agent
+            name: stork-agent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - bash
+                  - "-c"
+                  - /usr/local/bin/register-stork-agent.sh
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -155,16 +190,11 @@ spec:
         secret:
           secretName: {{ .Release.Name }}-certs
           optional: false
-      - name: kea-runstate
-        emptyDir: {}
       - name: stork-config
         secret:
           secretName: stork-config
           optional: false
-      - name: stork-certs
-        secret:
-          secretName: stork-certs
-          optional: false
-      - name: stork-runtime-certs
+      - name: kea-runstate
         emptyDir: {}
-
+      - name: stork-agent
+        emptyDir: {}

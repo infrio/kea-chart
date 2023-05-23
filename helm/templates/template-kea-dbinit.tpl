@@ -6,11 +6,11 @@ Create databases, users, and init tables
 
 set -o errexit
 
-if [[ ! -e /etc/kea-db-config/postgresql-password ]]; then
+if [[ ! -e /etc/kea-db-config/password ]]; then
     echo "db config not found"
     exit 1
 fi
-PASSWORD=$(cat /etc/kea-db-config/postgresql-password)
+PASSWORD=$(cat /etc/kea-db-config/password)
 DB_HOST={{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local
 DB_PORT="5432"
 

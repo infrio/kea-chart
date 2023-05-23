@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -o errexit
-set -a
 
 . /etc/stork/server.env
 
@@ -29,4 +28,7 @@ echo "Stork database is ready"
 # STORK_REST_TLS_PRIVATE_KEY=/etc/stork/certs/server.key
 # STORK_REST_TLS_CA_CERTIFICATE=/etc/stork/certs/ca.pem
 
-/usr/bin/stork-server
+cp /etc/stork/certs/ca.crt /usr/local/share/ca-certificates/stork.crt
+update-ca-certificates
+
+/usr/bin/stork-server --use-env-file
