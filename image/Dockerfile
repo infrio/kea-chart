@@ -18,6 +18,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get -y install curl python3 isc-kea-common isc-kea-admin isc-kea-ctrl-agent isc-kea-dhcp4 isc-kea-hooks isc-stork-agent isc-stork-server netcat postgresql-client-15 iproute2
 
+ADD setup-kea-dbs.sh /usr/local/bin/setup-kea-dbs.sh
 ADD start-dhcp4.sh /usr/local/bin/start-dhcp4.sh
 ADD start-ctrl-agent.sh /usr/local/bin/start-ctrl-agent.sh
 ADD start-stork-agent.sh /usr/local/bin/start-stork-agent.sh

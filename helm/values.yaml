@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-
 image:
   repository: jxiaobin/kea-dhcp
   pullPolicy: IfNotPresent
@@ -38,9 +36,11 @@ securityContext: {}
 service:
   type: ClusterIP
   dhcpPort: 67
-  agentPort: 8443
+  agentPort: "8443"
   storkServerPort: 9090
   storkAgentPort: 8080
+  primaryClusterIP: 10.96.0.11
+  standbyClusterIP: 10.96.0.12
 
 ingress:
   enabled: false
@@ -57,9 +57,6 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
-autoscaling:
-  enabled: false
-
 nodeSelector: {}
 
 tolerations: []
@@ -69,19 +66,8 @@ affinity: {}
 configDB:
   user: kea
   password: dhcpass
-  name: dhcp
-  port: 5432
-
-leaseDB:
-  user: kea
-  password: dhcpass
-  name: dhcp
-  port: 5432
-
-hostDB:
-  user: kea
-  password: dhcpass
-  name: dhcp
+  primary: dhcp1
+  standby: dhcp2
   port: 5432
 
 storkDB:
@@ -100,3 +86,6 @@ kea-agent:
 postgresql-ha:
   pgpool:
     initdbScriptsSecret: pgpool-users
+
+primaryServerName: server1
+standbyServerName: server2

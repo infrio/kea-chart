@@ -2,9 +2,12 @@
 
 set -o errexit
 
+export CONFIG_FILE=$1
+
 PYPROG=$(cat <<EOF
-import json
-with open("/etc/kea/dhcp4.conf") as file:
+import json,os
+config_file = os.environ.get("CONFIG_FILE")
+with open(config_file) as file:
     content = file.read()
     conf = json.loads(content)
     print("USER=%s" % conf['Dhcp4']['config-control']['config-databases'][0]['user'])
@@ -37,4 +40,4 @@ wait_for_psql(){
 wait_for_psql
 echo "Kea DB schema is ready"
 
-/usr/sbin/kea-dhcp4 -c /etc/kea/dhcp4.conf
+/usr/sbin/kea-dhcp4 -c ${CONFIG_FILE}

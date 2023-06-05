@@ -26,12 +26,13 @@ spec:
       containers:
       - name: config-databases
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        command: ["/bin/bash", "-c", "/etc/kea-db-init/kea-admin-init.sh"]
+        command: ["/bin/bash", "-c", "/usr/local/bin/setup-kea-dbs.sh"]
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-db-init
         volumeMounts:
         - name: db-config
           mountPath: /etc/kea-db-config
-        - name: db-init
-          mountPath: /etc/kea-db-init
         - name: stork-certs
           mountPath: /etc/stork/certs
       volumes:
@@ -39,14 +40,6 @@ spec:
         secret:
           secretName: {{ include "postgresql-ha.postgresql" (index .Subcharts "postgresql-ha") }}
           optional: false
-      - name: db-init
-        secret:
-          secretName: {{ .Release.Name }}-db-init
-          optional: false
-          items:
-          - key: kea-admin-init.sh
-            path: kea-admin-init.sh
-            mode: 0720
       - name: stork-certs
         secret:
           secretName: stork-certs

@@ -11,6 +11,18 @@
 }
 {{- end }}
 
+{{- define "stork-agent-credentials-standby" }}
+{
+   "basic_auth": [
+      {
+         "ip": {{ .Values.service.standbyClusterIP | quote }},
+         "port": {{ .Values.service.agentPort }},
+         "user": {{ index .Values "kea-agent" "user" | quote }},
+         "password": {{ index .Values "kea-agent" "password" | quote }}
+      }
+   ]
+}
+{{- end }}
 
 {{- define "stork-agent-env" -}}
 STORK_AGENT_SKIP_TLS_CERT_VERIFICATION=true

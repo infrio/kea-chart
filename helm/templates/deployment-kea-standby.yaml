@@ -1,0 +1,202 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "kea4.fullname" . }}-standby
+  labels:
+    {{- include "kea4.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kea4.selectorLabels" . | nindent 6 }}
+      kea.isc.org/role: standby
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kea4.selectorLabels" . | nindent 8 }}
+        kea.isc.org/role: standby
+    spec:
+      shareProcessNamespace: true
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kea4.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: dhcp4
+          command:
+          - /bin/bash
+          - "-c"
+          - /usr/local/bin/start-dhcp4.sh /etc/kea/dhcp4-standby.conf
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: dhcp
+              containerPort: 67
+              protocol: UDP
+          livenessProbe:
+            exec:
+              command:
+              - echo
+              - '{"command": "version-get"}'
+              - "|"
+              - socat
+              - unix:/{{ .Values.kea.unixSocket }}
+              - "-"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          readinessProbe:
+            exec:
+              command:
+              - echo
+              - '{"command": "version-get"}'
+              - "|"
+              - socat
+              - unix:/{{ .Values.kea.unixSocket }}
+              - "-"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: kea-config
+            mountPath: /etc/kea
+          - name: kea-runstate
+            mountPath: /var/kea
+          - name: kea-certs
+            mountPath: /etc/kea/certs
+        - name: ctrl-agent
+          command:
+          - /bin/bash
+          - "-c"
+          - /usr/local/bin/start-ctrl-agent.sh
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: ctrl-agent
+              containerPort: {{ .Values.service.agentPort }}
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - curl
+              - --fail
+              - -k
+              - -X
+              - POST
+              - -H
+              - "Content-Type: application/json"
+              - -H
+              - 'Authorization: Basic {{- include "kea-ctrl-agent-auth-token" . -}}'
+              - -d
+              - '{"command": "status-get"}'
+              - https://localhost:{{ .Values.service.agentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+              - curl
+              - --fail
+              - -k
+              - -X
+              - POST
+              - -H
+              - "Content-Type: application/json"
+              - -H
+              - 'Authorization: Basic {{- include "kea-ctrl-agent-auth-token" . -}}'
+              - -d
+              - '{"command": "status-get"}'
+              - https://localhost:{{ .Values.service.agentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: kea-config
+            mountPath: /etc/kea
+          - name: kea-certs
+            mountPath: /etc/kea/certs
+          - name: kea-runstate
+            mountPath: /var/kea
+        - name: stork-agent
+          command:
+          - bash
+          - "-c"
+          - /usr/local/bin/start-stork-agent.sh
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: stork-agent
+              containerPort: {{ .Values.service.storkAgentPort }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.storkAgentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.storkAgentPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: kea-config
+            mountPath: /etc/kea
+          - name: stork-config
+            mountPath: /etc/stork
+          - mountPath: /etc/stork/certs
+            name: kea-certs
+          - mountPath: /var/lib/stork-agent
+            name: stork-agent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - bash
+                  - "-c"
+                  - /usr/local/bin/register-stork-agent.sh
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: kea-config
+        secret:
+          secretName: {{ .Release.Name }}-config
+          optional: false
+      - name: kea-certs
+        secret:
+          secretName: {{ .Release.Name }}-certs
+          optional: false
+      - name: stork-config
+        secret:
+          secretName: stork-config
+          optional: false
+      - name: kea-runstate
+        emptyDir: {}
+      - name: stork-agent
+        emptyDir: {}

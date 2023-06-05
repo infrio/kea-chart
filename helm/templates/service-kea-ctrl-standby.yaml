@@ -2,14 +2,16 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: ctrl
+  name: kea-ctrl-standby
   labels:
     {{- include "kea4.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
+  clusterIP: {{ .Values.service.standbyClusterIP }}
   ports:
     - port: {{ .Values.service.agentPort }}
       protocol: TCP
-      name: ctrl-agent
+      name: kea-ctrl-agent
   selector:
     {{- include "kea4.selectorLabels" . | nindent 4 }}
+    kea.isc.org/role: standby

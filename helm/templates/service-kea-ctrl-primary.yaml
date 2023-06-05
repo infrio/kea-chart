@@ -2,16 +2,16 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "kea4.fullname" . }}
+  name: kea-ctrl-primary
   labels:
     {{- include "kea4.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
+  clusterIP: {{ .Values.service.primaryClusterIP }}
   ports:
-    - port: {{ .Values.service.dhcpPort }}
-      protocol: UDP
-      name: dhcp
+    - port: {{ .Values.service.agentPort }}
+      protocol: TCP
+      name: kea-ctrl-agent
   selector:
     {{- include "kea4.selectorLabels" . | nindent 4 }}
     kea.isc.org/role: primary
-

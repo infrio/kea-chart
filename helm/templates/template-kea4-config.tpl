@@ -1,4 +1,10 @@
 {{- define "kea4-config" }}
+{{- $dbName := .Values.configDB.primary }}
+{{- $serverName := .Values.primaryServerName }}
+{{- if eq .role "standby" }}
+{{- $dbName = .Values.configDB.standby }}
+{{- $serverName = .Values.standbyServerName }}
+{{- end }}
 {
   "Dhcp4": {
     "interfaces-config": {
@@ -15,7 +21,7 @@
       "config-databases": [
         {
           "type": "postgresql",
-          "name": {{ .Values.configDB.name | quote }},
+          "name": {{ $dbName | quote }},
           "user": {{ .Values.configDB.user | quote }},
           "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
           "port": {{ .Values.configDB.port }},
@@ -26,18 +32,18 @@
     },
     "lease-database": {
       "type": "postgresql",
-      "name": {{ .Values.leaseDB.name | quote }},
-      "user": {{ .Values.leaseDB.user | quote }},
+      "name": {{ $dbName | quote }},
+      "user": {{ .Values.configDB.user | quote }},
       "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
-      "password": {{ .Values.leaseDB.password | quote }},
+      "password": {{ .Values.configDB.password | quote }},
       "lfc-interval": 3600
     },
     "hosts-database": {
       "type": "postgresql",
-      "name": {{ .Values.hostDB.name | quote }},
-      "user": {{ .Values.leaseDB.user | quote }},
+      "name": {{ $dbName | quote }},
+      "user": {{ .Values.configDB.user | quote }},
       "host": "{{ template "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}.{{ .Release.Namespace}}.svc.cluster.local",
-      "password": {{ .Values.leaseDB.password | quote }}
+      "password": {{ .Values.configDB.password | quote }}
     },
     "expired-leases-processing": {
       "reclaim-timer-wait-time": 10,
@@ -71,6 +77,42 @@
       },
       {
         "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so"
+      },
+      {
+        "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_ha.so",
+        "parameters": {
+          "high-availability": [ {
+            "this-server-name": {{ $serverName | quote }},
+            "mode": "hot-standby",
+            "heartbeat-delay": 10000,
+            "max-response-delay": 10000,
+            "max-ack-delay": 5000,
+            "max-unacked-clients": 5,
+            "peers": [ {
+              "name": {{ .Values.primaryServerName | quote }},
+              "url": {{ printf "https://%s:%s" .Values.service.primaryClusterIP .Values.service.agentPort | quote }},
+              "role": "primary",
+              "auto-failover": true,
+              "basic-auth-user": {{ index .Values "kea-agent" "user" | quote }},
+              "basic-auth-password": {{ index .Values "kea-agent" "password" | quote }},
+              "trust-anchor": "/etc/kea/certs/ca.crt",
+              "cert-file": "/etc/kea/certs/ctrl-agent.crt",
+              "key-file": "/etc/kea/certs/ctrl-agent.key",
+              "require-client-certs": false
+            }, {
+              "name": {{ .Values.standbyServerName | quote }},
+              "url": {{ printf "https://%s:%s" .Values.service.standbyClusterIP .Values.service.agentPort | quote }},
+              "role": "standby",
+              "auto-failover": true,
+              "basic-auth-user": {{ index .Values "kea-agent" "user" | quote }},
+              "basic-auth-password": {{ index .Values "kea-agent" "password" | quote }},
+              "trust-anchor": "/etc/kea/certs/ca.crt",
+              "cert-file": "/etc/kea/certs/ctrl-agent.crt",
+              "key-file": "/etc/kea/certs/ctrl-agent.key",
+              "require-client-certs": false
+            }]
+          }]
+        }
       }
     ],
     "loggers": [

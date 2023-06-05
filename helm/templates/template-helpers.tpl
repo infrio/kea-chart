@@ -61,3 +61,24 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Add users to pgpool
+*/}}
+{{- define "pgpool-add-users" }}
+#!/bin/bash
+
+set -o errexit
+
+/opt/bitnami/pgpool/bin/pg_enc --config-file=/opt/bitnami/pgpool/conf/pgpool.conf -k /opt/bitnami/pgpool/conf/.pgpoolkey -u {{ .Values.configDB.user }} {{ .Values.configDB.password }} -m
+/opt/bitnami/pgpool/bin/pg_enc --config-file=/opt/bitnami/pgpool/conf/pgpool.conf -k /opt/bitnami/pgpool/conf/.pgpoolkey -u {{ .Values.storkDB.user }} {{ .Values.storkDB.password }} -m
+
+{{- end }}
+
+{{/*
+Generate postgresql pool FQDN
+*/}}
+{{- define "pgpool-fqdn" }}
+{{- $pgPoolName := include "postgresql-ha.pgpool" (index .Subcharts "postgresql-ha") }}
+{{ printf "%s.%s.svc.cluster.local" $pgPoolName .Release.Namespace }}
+{{- end }}

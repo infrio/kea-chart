@@ -2,16 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "kea4.fullname" . }}
+  name: {{ include "kea4.fullname" . }}-primary
   labels:
     {{- include "kea4.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
       {{- include "kea4.selectorLabels" . | nindent 6 }}
+      kea.isc.org/role: primary
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,6 +19,7 @@ spec:
       {{- end }}
       labels:
         {{- include "kea4.selectorLabels" . | nindent 8 }}
+        kea.isc.org/role: primary
     spec:
       shareProcessNamespace: true
       {{- with .Values.imagePullSecrets }}
@@ -34,7 +34,7 @@ spec:
           command:
           - /bin/bash
           - "-c"
-          - /usr/local/bin/start-dhcp4.sh
+          - /usr/local/bin/start-dhcp4.sh /etc/kea/dhcp4-primary.conf
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -72,6 +72,8 @@ spec:
             mountPath: /etc/kea
           - name: kea-runstate
             mountPath: /var/kea
+          - name: kea-certs
+            mountPath: /etc/kea/certs
         - name: ctrl-agent
           command:
           - /bin/bash
